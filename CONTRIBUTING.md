@@ -72,3 +72,7 @@ Git metadata; it scans the selected files for accidental private-key material an
 known generated tokens before packaging. This is an additional check, not a general
 secret-detector guarantee. Preserve upstream attribution and license. No commit,
 push, publication, deployment or paid operation is part of these local commands.
+
+For opt-in fault controls and real encrypted restore tests, use a fresh profile with
+`QUORUM_DEMO_CONTROLS=1 make demo`, then `npm run resilience`. See docs/recovery.md.
+Never upload `.dev/`, `.qcb` backups, password files or browser traces as CI artifacts.

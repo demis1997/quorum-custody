@@ -115,6 +115,7 @@ const policyEnvelope = {
 const dbPassword = randomBytes(24).toString('hex'),
   adminPassword = randomBytes(24).toString('hex');
 atomicJson(resolve(dev, 'config.json'), {
+  demoControls: process.env.QUORUM_DEMO_CONTROLS === '1',
   actors,
   ports,
   project,

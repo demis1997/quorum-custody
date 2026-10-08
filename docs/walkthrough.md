@@ -32,3 +32,17 @@ Be candid: this is local and unaudited. One host owns all signer storage, wrappi
 keys are local files, audit is mutable by administrators, global spending accounting
 trusts PostgreSQL, and offline policy revocation requires more design. These limits
 are part of the demonstration, not hidden behind production claims.
+
+## Failure and recovery extension
+
+Provision a fresh profile with `QUORUM_DEMO_CONTROLS=1 make demo`. Import admin.json
+and open **Failure demonstration**. Take signer-3 offline, request a transfer and
+collect alice/bob approvals normally. Return as admin to observe its real receipt
+and separate retry counts; bring signer-3 online. No approvals are supplied by the
+fault-control panel.
+
+For a repeatable operator recovery demonstration run `npm run resilience`. It moves
+one stopped signer's directory into private quarantine, rejects an older backup,
+restores the current encrypted backup and confirms another transfer through that
+signer. It also proves old session IDs remain rejected. Read recovery.md before
+using the operator CLI; this does not simulate loss of the whole host or database.

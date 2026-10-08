@@ -65,10 +65,11 @@ actor files are also on this host. Secret provisioning is not an enterprise iden
 system. Seven-day certificates require manual renewal/new profiles.
 
 DKG may leave orphaned share files if the coordinator crashes before registering
-its wallet. Partial file-write failure can leave an unusable share. No backup,
-refresh, share restoration, wallet import/export or secure erase is implemented.
+its wallet. Partial file-write failure can leave an unusable share. Offline encrypted complete-state backup and restoration are implemented; see recovery.md.
+Share refresh, identity rotation, wallet import/export and secure erase remain unimplemented.
 After restoring signer state from stale backups, nonce/reservation/session records
-could roll back; no monotonic hardware counter exists. Never discard ledgers while
+could roll back; a retained generation/digest checkpoint rejects an older backup. It is on the same host;
+no monotonic hardware counter exists and a host administrator can change it. Never discard ledgers while
 keeping a valuable key. Crashes and disk failures at every fsync boundary have not
 been exhaustively tested. Atomic JSON uses file and directory fsync; session marker
 creation is fail-closed for normal restarts but is not a complete power-loss proof.
@@ -96,7 +97,8 @@ reorg/finality simulation or external security review is claimed.
 ## Remaining work, in impact order
 
 1. Establish independent signer/approver trust domains, external wrapping-key
-   protection, key/certificate rotation and tested backups/recovery. Never use the
+   protection, key/certificate rotation and production backup/recovery across independent domains. The local offline workflow
+   covers one signer directory with its checkpoint, TLS identity, database and chain retained. Never use the
    current development credentials or storage design for valuable funds.
 2. Replace global budget/nonce trust in PostgreSQL with an explicit authenticated,
    consensus-backed reservation design if coordinator/database compromise must
@@ -112,3 +114,12 @@ reorg/finality simulation or external security review is claimed.
 
 None of these are marked complete. The implemented local flow is an unaudited
 portfolio demonstration, not production custody.
+
+## Development failure controls
+
+An explicit provision-time opt-in exposes loopback admin-only controls for three fixed managed
+signer IDs. Compromise of that admin bearer can stop or restart those signer processes and deny
+service. There is no arbitrary PID, command, worker-lease mutation, key export or approval bypass.
+Controls stay absent from the navigation and return disabled when the profile is not opted in.
+Do not enable this demonstration surface for a remotely exposed application. Recovery inspection
+requires the signer offline; online mutable files are not treated as a consistent snapshot.

@@ -13,10 +13,12 @@
     "provision": "tsx scripts/provision.ts",
     "demo": "tsx scripts/demo.ts",
     "lint": "eslint src scripts tests ui",
-    "format": "prettier --write src scripts tests ui"
+    "format": "prettier --write src scripts tests ui",
+    "recovery": "tsx scripts/recovery.ts",
+    "resilience": "tsx tests/resilience.ts"
   },
   "dependencies": {
-    "@noble/curves": "^1.9.7",
+    "@noble/curves": "1.9.7",
     "ethers": "6.17.0",
     "express": "5.2.1",
     "pg": "8.23.1",
@@ -38,5 +40,8 @@
     "typescript": "5.9.3",
     "typescript-eslint": "8.71.1",
     "vite": "8.3.4"
+  },
+  "engines": {
+    "node": ">=22.20.0 <23"
   }
 }

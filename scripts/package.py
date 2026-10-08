@@ -9,7 +9,7 @@ output = root.parent / "quorum-custody-source.tar.gz"
 excluded = {".build", "node_modules", "dist", ".git", ".env"}
 files = [p for p in root.rglob("*") if p.is_file() and not any(
     part in excluded or part.startswith(".dev") for part in p.relative_to(root).parts
-) and p.suffix != ".log"]
+) and p.suffix not in {".log", ".qcb"}]
 known_secrets = []
 for actor_file in root.glob(".dev*/actors/*.json"):
     actor = json.loads(actor_file.read_text())

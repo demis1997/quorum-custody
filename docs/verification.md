@@ -1,6 +1,7 @@
 # Verification record
 
-Date: 8 October 2026 (Asia/Nicosia). All successful application transfers used
+Original baseline: 8 October 2026 (Asia/Nicosia). Historical statements below describe
+the pre-publication run; see the 9 October update for subsequent work. All successful application transfers used
 synthetic balances on local Anvil chain 31337. No commit, push, publication,
 external deployment or payment was performed.
 
@@ -187,3 +188,44 @@ were expanded to explicitly show “Local development network” and “Prototyp
   a successful final integration rerun.
 
 No required test is silently marked passed. See threat-model.md for remaining work.
+
+## 9 October: CI, failure demonstration and recovery
+
+Preserved the user's README update `d221f38`. The first hosted run compiled the
+real native adapter, completed the Anvil demo and passed checks; browser automation
+then failed on an exact navigation name containing an icon. Added stable accessible
+nav labels and wait for the browser-approved transaction receipt before integration.
+Split CI stages, retained project-only teardown and uploaded allowlisted reports and
+real PNG screenshots without generated profiles, backups or browser traces.
+
+Local `make check` under pinned Node 22.20.0 passed types, lint, formatting, build
+and 20 unit/property cases (15 existing plus 5 recovery boundary cases). The shell
+defaulted to Node 18 once; that unsupported-runtime build failure was corrected by
+selecting the documented Node 22 runtime. Added an explicit package engine range.
+
+Hosted run [37845966122](https://github.com/demis1997/quorum-custody/actions/runs/37845966122)
+on commit `9ce3432` passed the complete real native/demo, 20 checks, browser approval
+and failure controls, all 17 integration groups, all 6 resilience groups, artifact
+upload and project-only teardown. The restored signer completed a new real transfer
+with signer-3 offline, and replayed session IDs stayed rejected. The original signer
+directory was moved into private quarantine to inject loss; the database, chain, TLS
+identity and independent checkpoint survived. This is not a total-host-loss test. The host Docker socket remains
+unresponsive, so this round uses the hosted Linux runner for end-to-end verification.
+
+Four real hosted PNG screenshots were downloaded from the verification artifact,
+visually inspected and embedded in the README: wallet-overview.png, approval-queue.png,
+completed-transaction.png and failure-demonstration.png. They show explicit local
+network/prototype labels and no credentials, wrapping keys or keyshares. Historical
+JPEGs remain as baseline evidence. The final backup snapshot consistency guard, pre-action/failure audit records and
+worker-row layout refinement passed the entire hosted sequence on commit `dbb5555`,
+including push run [37846801902](https://github.com/demis1997/quorum-custody/actions/runs/37846801902)
+and PR run [37846808162](https://github.com/demis1997/quorum-custody/actions/runs/37846808162).
+The checked-in PNGs are from that final PR run's verification artifact. Both runs
+passed all stages, with 20 unit/property cases, 17 real integration groups and 6
+real resilience groups, actual browser approval/control actions and scoped teardown.
+No mocks substituted for any end-to-end path.
+
+Remaining unexecuted paths: optional Dockerfile.native, full upstream/sanitizer and
+side-channel lanes, multi-host operation, full power-loss/disk-loss matrix, total-host
+recovery and production identity rotation. Historical local Docker rerun remains
+blocked, but the current source's real Linux path is verified above.

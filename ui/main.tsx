@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { formatEther, parseEther } from 'ethers';
 import { approvalText, canonical } from '../src/encoding.js';
 import './style.css';
+import { FailureDemo } from './FailureDemo.js';
 type Actor = { id: string; role: string; token: string; privateKey: string };
 type Wallet = {
   id: string;
@@ -39,6 +40,7 @@ type Policy = {
   separationOfDuties: boolean;
 };
 type Overview = {
+  demoControls: boolean;
   wallets: Wallet[];
   transactions: Tx[];
   signers: { id: string; available: boolean; policyVersion: number | null }[];
@@ -149,23 +151,29 @@ function App() {
         </div>
         <div className="workspace">DEVELOPMENT WORKSPACE</div>
         <nav>
-          {['Overview', 'Transactions', 'Approval queue', 'Policy', 'Audit history'].map(
-            (item, i) => (
-              <button
-                key={item}
-                className={view === item ? 'nav active' : 'nav'}
-                onClick={() => {
-                  setView(item);
-                  setDetail(null);
-                  setSelected(null);
-                }}
-              >
-                <span className="navicon">{['◈', '↗', '✓', '◇', '≡'][i]}</span>
-                {item}
-                {item === 'Approval queue' && pending.length > 0 && <b>{pending.length}</b>}
-              </button>
-            ),
-          )}
+          {[
+            'Overview',
+            'Transactions',
+            'Approval queue',
+            'Policy',
+            'Audit history',
+            ...(actor?.role === 'admin' && data?.demoControls ? ['Failure demonstration'] : []),
+          ].map((item, i) => (
+            <button
+              key={item}
+              aria-label={item}
+              className={view === item ? 'nav active' : 'nav'}
+              onClick={() => {
+                setView(item);
+                setDetail(null);
+                setSelected(null);
+              }}
+            >
+              <span className="navicon">{['◈', '↗', '✓', '◇', '≡', '⚙'][i]}</span>
+              {item}
+              {item === 'Approval queue' && pending.length > 0 && <b>{pending.length}</b>}
+            </button>
+          ))}
         </nav>
         <div className="sidebarbottom">
           <span className="dot" />
@@ -250,6 +258,9 @@ function App() {
             <section className="card empty">Loading the real custody backend…</section>
           ) : (
             <>
+              {view === 'Failure demonstration' && actor.role === 'admin' && (
+                <FailureDemo key={actor.id} api={api} />
+              )}
               {view === 'Overview' && (
                 <>
                   <div className="metrics">

@@ -17,6 +17,7 @@ import {
 } from './domain.js';
 import { tlsOptions, peerIdentity, callSigner } from './tls.js';
 import { runNative } from './native.js';
+import { initializeRecovery, checkpointRecovery } from './recovery.js';
 const identity = process.env.SIGNER_ID ?? 'signer-1';
 requireThat(
   config().signers.some((p) => p.id === identity),
@@ -30,6 +31,17 @@ const ledgerPath = resolve(storage, 'ledger.json');
 type Entry = { digest: string; reserved: string; nonce: number; attempts: number };
 type Ledger = Record<string, Record<string, Entry>>;
 const ledger: Ledger = existsSync(ledgerPath) ? JSON.parse(readFileSync(ledgerPath, 'utf8')) : {};
+const recoveryAnchor = resolve(dev, 'recovery', identity + '.anchor.json');
+initializeRecovery(storage, recoveryAnchor);
+let storageHealthy = true;
+function checkpoint() {
+  try {
+    checkpointRecovery(storage, recoveryAnchor);
+  } catch (error) {
+    storageHealthy = false;
+    throw error;
+  }
+}
 const currentPolicy = () => JSON.parse(readFileSync(policyPath, 'utf8')) as PolicyEnvelope;
 const manifestSchema = z
   .object({
@@ -72,6 +84,7 @@ app.disable('x-powered-by');
 app.use(express.json({ limit: '9mb' }));
 app.use((req, res, next) => {
   try {
+    requireThat(storageHealthy, 'recovery_state_mismatch', 503);
     res.locals.peer = peerIdentity(req.socket as TLSSocket);
     next();
   } catch {
@@ -96,6 +109,7 @@ app.post('/policy', (req, res) => {
     409,
   );
   atomicJson(policyPath, envelope);
+  checkpoint();
   res.json({ version: envelope.policy.version });
 });
 app.post('/prepare', (req, res) => {
@@ -153,6 +167,7 @@ app.post('/prepare', (req, res) => {
     atomicJson(ledgerPath, ledger);
   }
   writeFileSync(seenPath, 'prepared', { flag: 'wx', mode: 0o600 });
+  checkpoint();
   const context = createHash('sha256').update(canonical(manifest)).digest('hex');
   const session: Session = {
     manifest,
@@ -250,11 +265,13 @@ app.post('/run', async (req, res) => {
       },
     });
     requireThat(active === session, 'session_cancelled');
-    if (m.mode === 'dkg')
+    if (m.mode === 'dkg') {
       writeFileSync(resolve(storage, m.walletId + '.public'), result.publicKey, {
         flag: 'wx',
         mode: 0o600,
       });
+      checkpoint();
+    }
     res.json(result);
   } finally {
     clearSession(session);

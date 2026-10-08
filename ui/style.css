@@ -715,3 +715,24 @@ details code {
     text-align: right;
   }
 }
+
+.demosteps {
+  color: #60788a;
+  line-height: 1.8;
+  padding-left: 24px;
+}
+
+.demojobs .tablerow {
+  min-width: 850px;
+}
+.demojobs .tablerow small {
+  display: block;
+  color: #7a8fa0;
+  margin-top: 4px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.demojobs .tablerow > span:nth-child(3),
+.demojobs .tablerow > span:last-child {
+  display: block;
+}

@@ -128,3 +128,12 @@ refuses manifests older than 12 hours because of PID reuse risk; manual inspecti
 is then required. The normal command never uses broad process matching, global
 prune, or removes persistent volumes. OS sandbox restrictions may require running
 all lifecycle tests within the same permitted shell execution.
+
+## Operational demonstration and recovery
+
+Opt-in loopback admin controls act only on fixed signer entries in the private managed-process
+manifest. They record control events and show real worker leases/retry counters. Ordinary
+transaction authorization remains unchanged. Offline operator recovery uses authenticated
+encrypted complete-state bundles with an external generation/digest checkpoint; see recovery.md
+and decision 005. Signer startup verifies the checkpoint, and persisted policy/session/ledger/DKG
+changes advance it. Inconsistent state fails closed, rather than silently resetting reservations.
