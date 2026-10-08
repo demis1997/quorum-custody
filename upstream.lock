@@ -1,0 +1,4 @@
+repository=https://github.com/coinbase/cb-mpc.git
+commit=0b716706f998633912ee2be9b9bf8909aed66088
+openssl=3.6.4
+openssl_sha256=9bffaa1ad1e07b354c21bd3324ec02fa15579f45a7d0494b3e74bc449b7333ef

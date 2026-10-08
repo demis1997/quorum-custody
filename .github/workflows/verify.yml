@@ -1,0 +1,38 @@
+name: Real custody verification
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  local-integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.20.0'
+      - name: Native prerequisites (Clang 20)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake make perl curl gnupg ca-certificates
+          curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/llvm.gpg
+          echo 'deb [signed-by=/usr/share/keyrings/llvm.gpg] https://apt.llvm.org/noble/ llvm-toolchain-noble-20 main' | sudo tee /etc/apt/sources.list.d/llvm20.list
+          sudo apt-get update
+          sudo apt-get install -y clang-20
+      - name: Pinned Anvil release
+        run: |
+          mkdir -p .build/foundry
+          curl -fL https://github.com/foundry-rs/foundry/releases/download/v1.3.1/foundry_v1.3.1_linux_amd64.tar.gz -o .build/foundry.tar.gz
+          tar -xzf .build/foundry.tar.gz -C .build/foundry anvil
+          echo "$PWD/.build/foundry" >> "$GITHUB_PATH"
+          .build/foundry/anvil --version
+      - name: Real demo, boundaries, checks and screenshots
+        env:
+          CC: clang-20
+          CXX: clang++-20
+        run: |
+          trap 'make stop || true' EXIT
+          make demo
+          make check
+          make screenshots
+          make integration

@@ -1,0 +1,7 @@
+.dev*
+.build
+node_modules
+dist
+.git
+.env
+*.log
