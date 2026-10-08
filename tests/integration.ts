@@ -436,6 +436,100 @@ try {
       );
     },
   );
+  await check(
+    'expired authorization blocks persisted real MPC bytes before a new broadcast',
+    async () => {
+      const w = await readyWallet();
+      const row = await create(w.id);
+      await signedApprovals(row);
+      await processClaim(await ownClaim(row.id));
+      const signed = (await pool.query('SELECT * FROM transactions WHERE id=$1', [row.id]))
+        .rows[0] as TxRow;
+      assert.equal(signed.state, 'signed');
+      assert.ok(signed.signed_raw && signed.tx_hash);
+      await pool.query("UPDATE transactions SET expires_at=now()-interval '1 second' WHERE id=$1", [
+        row.id,
+      ]);
+      await processClaim(await ownClaim(row.id));
+      const blocked = (await pool.query('SELECT * FROM transactions WHERE id=$1', [row.id]))
+        .rows[0] as TxRow;
+      assert.equal(blocked.state, 'blocked');
+      assert.equal(blocked.error, 'approval_expired');
+      assert.equal(blocked.broadcast_attempts, 0);
+      assert.equal(blocked.signed_raw, signed.signed_raw);
+      assert.equal(blocked.reserved, signed.reserved);
+      assert.equal(await chain.getTransaction(signed.tx_hash!), null);
+      assert.equal(
+        (
+          await pool.query(
+            "SELECT 1 FROM audit WHERE transaction_id=$1 AND event='broadcast_authorized'",
+            [row.id],
+          )
+        ).rowCount,
+        0,
+      );
+    },
+  );
+  await check('observed real transaction reconciles even after its approval expiry', async () => {
+    const w = await readyWallet();
+    const row = await create(w.id);
+    await signedApprovals(row);
+    await processClaim(await ownClaim(row.id));
+    const signed = (await pool.query('SELECT * FROM transactions WHERE id=$1', [row.id]))
+      .rows[0] as TxRow;
+    assert.equal(signed.state, 'signed');
+    assert.equal(await chain.send('eth_sendRawTransaction', [signed.signed_raw]), signed.tx_hash);
+    await pool.query("UPDATE transactions SET expires_at=now()-interval '1 second' WHERE id=$1", [
+      row.id,
+    ]);
+    await processClaim(await ownClaim(row.id));
+    assert.equal((await details(row.id)).transaction.state, 'confirmed');
+  });
+  await check(
+    'policy changed after real MPC signing blocks fresh submission of old bytes',
+    async () => {
+      const w = await readyWallet();
+      const row = await create(w.id);
+      await signedApprovals(row);
+      await processClaim(await ownClaim(row.id));
+      const signed = (await pool.query('SELECT * FROM transactions WHERE id=$1', [row.id]))
+        .rows[0] as TxRow;
+      assert.equal(signed.state, 'signed');
+      const current = await policy();
+      const next = { ...current.policy, version: current.policy.version + 1 };
+      await request('admin', '/policy', {
+        policy: next,
+        signature: sign(null, Buffer.from(policyText(next)), actor('admin').privateKey).toString(
+          'hex',
+        ),
+      });
+      await processClaim(await ownClaim(row.id));
+      const blocked = (await pool.query('SELECT * FROM transactions WHERE id=$1', [row.id]))
+        .rows[0] as TxRow;
+      assert.equal(blocked.state, 'blocked');
+      assert.equal(blocked.error, 'policy_changed');
+      assert.equal(blocked.broadcast_attempts, 0);
+      assert.equal(blocked.tx_hash, signed.tx_hash);
+      assert.equal(await chain.getTransaction(signed.tx_hash!), null);
+    },
+  );
+  await check(
+    'engineering evidence endpoints are admin-only and do not export runtime secrets',
+    async () => {
+      await assert.rejects(() => request('requester', '/compliance'), /role_forbidden/);
+      await assert.rejects(() => request('alice', '/compliance/evidence'), /role_forbidden/);
+      const inventory = await request<{ controls: { status: string }[] }>('admin', '/compliance');
+      assert.ok(inventory.controls.length >= 10);
+      assert.ok(inventory.controls.every((control) => control.status !== 'VERIFIED'));
+      const exported = JSON.stringify(await request('admin', '/compliance/evidence'));
+      for (const id of ['requester', 'alice', 'bob', 'admin']) {
+        assert.ok(!exported.includes(actor(id).token));
+        assert.ok(!exported.includes(actor(id).privateKey));
+      }
+      assert.ok(!exported.includes('signed_raw'));
+      assert.ok(!exported.includes('.share'));
+    },
+  );
   await check('database audit modification is denied to application credentials', async () => {
     await assert.rejects(
       () => pool.query("UPDATE audit SET event='tampered'"),

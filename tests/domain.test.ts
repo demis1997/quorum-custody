@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { generateKeyPairSync, sign } from 'node:crypto';
 import { Transaction, SigningKey } from 'ethers';
 import fc from 'fast-check';
+import { validateBroadcastDecision } from '../src/broadcast-decision.js';
 import {
   ActorPublic,
   Authorization,
@@ -201,4 +202,87 @@ test('property: amount parser rejects signs, exponents, decimals and extra field
 });
 test('canonical evidence does not depend on object insertion order', () => {
   assert.equal(canonical({ z: 1, a: { d: 3, b: 2 } }), canonical({ a: { b: 2, d: 3 }, z: 1 }));
+});
+
+// Whole-key signing is limited to these unit fixtures; real MPC remains mandatory
+// for integration. These tests exercise portable signed bytes after approval.
+function broadcastFixture() {
+  const f = fixture();
+  const tx = Transaction.from(f.auth.unsigned);
+  tx.signature = new SigningKey('0x' + '01'.repeat(32)).sign(tx.unsignedHash);
+  return {
+    ...f,
+    row: {
+      state: 'signed',
+      signed_raw: tx.serialized,
+      tx_hash: tx.hash,
+      unsigned: tx.unsignedSerialized,
+      broadcast_attempts: 0,
+    },
+  };
+}
+test('broadcast decision accepts current authorization and rejects expiry after signing', () => {
+  const f = broadcastFixture();
+  validateBroadcastDecision(f.row, f.auth, f.actors, f.envelope);
+  assert.throws(
+    () =>
+      validateBroadcastDecision(f.row, f.auth, f.actors, f.envelope, Date.parse(f.auth.expiresAt)),
+    /approval_expired/,
+  );
+});
+test('broadcast decision rejects changed policy and removed approvals without changing raw bytes', () => {
+  const f = broadcastFixture();
+  const policy = { ...f.policy, version: 2 };
+  const envelope = {
+    policy,
+    signature: sign(null, Buffer.from(policyText(policy)), f.privateKeys.admin).toString('hex'),
+  };
+  assert.throws(
+    () => validateBroadcastDecision(f.row, f.auth, f.actors, envelope),
+    /policy_changed/,
+  );
+  f.auth.approvals.pop();
+  assert.throws(
+    () => validateBroadcastDecision(f.row, f.auth, f.actors, f.envelope),
+    /insufficient_approvals/,
+  );
+});
+test('signed freeze and denylist override otherwise valid transfers', () => {
+  for (const addition of [
+    { frozen: true },
+    { deniedRecipients: [fixture().policy.recipients[0]] },
+  ]) {
+    const f = fixture();
+    Object.assign(f.policy, addition);
+    f.envelope.signature = sign(
+      null,
+      Buffer.from(policyText(f.policy)),
+      f.privateKeys.admin,
+    ).toString('hex');
+    assert.throws(
+      () => authorize(f.auth, f.actors, f.envelope),
+      addition.frozen ? /custody_frozen/ : /recipient_denied/,
+    );
+    assert.throws(() => parseTransfer(f.auth.unsigned, f.policy));
+  }
+});
+test('broadcast decision rejects foreign signed bytes and exhausted attempts', () => {
+  const f = broadcastFixture();
+  const foreign = Transaction.from(f.auth.unsigned);
+  foreign.signature = new SigningKey('0x' + '02'.repeat(32)).sign(foreign.unsignedHash);
+  assert.throws(
+    () =>
+      validateBroadcastDecision(
+        { ...f.row, signed_raw: foreign.serialized, tx_hash: foreign.hash },
+        f.auth,
+        f.actors,
+        f.envelope,
+      ),
+    /persisted_signed_transaction_mismatch/,
+  );
+  assert.throws(
+    () =>
+      validateBroadcastDecision({ ...f.row, broadcast_attempts: 5 }, f.auth, f.actors, f.envelope),
+    /broadcast_retry_limit/,
+  );
 });

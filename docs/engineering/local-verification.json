@@ -1,0 +1,30 @@
+{
+  "outcome": "PASS",
+  "command": "make check",
+  "executedAt": "2026-10-08T21:55:20.193Z",
+  "environment": "macOS ARM64; Node 22.20.0; local source working tree based on 425a55d",
+  "passed": 26,
+  "skipped": 0,
+  "sourceHashes": {
+    "src/domain.ts": "c818e34287ce315a0daa77ab8f759213d95f05c625077b9d95027c7413042e24",
+    "src/broadcast-decision.ts": "a921629d600b70f568c3de8d8b443119ba8a4a37326814b1b65a93761db1f6ea",
+    "src/worker.ts": "a5c892f4511bea1fb48f501769604ffe38b2bcdb5650b1bc43c91054586bfe21",
+    "src/compliance.ts": "baf23ff1d8154c6e80de7f2d90673943a61f0b1e3e349caf56ea0314ed5425c2",
+    "src/api.ts": "a079cd3a7920761b18cb866f62ae665c3b5632b63e55849a7cc67789bbcc7e66",
+    "src/signer.ts": "5e9f4aca7accbba1c66e064be952289a0eab2d98f294b34bad690a4b43938490",
+    "src/custody.ts": "88ba8e493117c71922e83e61cc56d2016db13915420b2e84fef31693f3370a77",
+    "src/recovery.ts": "ebab0d85a6913774d198dad1bd0c3d8af72e0923625746175d4afe91f703d463",
+    "src/db.ts": "5fc6d2648200b943da91d217cc91fabe6068f66443241fa3144584fb6e8c2a85",
+    "src/schema.sql": "a995672fa2598da24696e2f0b7a7a73a45fcc2ed04e845fd7135e7572c8762e8",
+    "tests/domain.test.ts": "1f821702c07adf7883a5d10c959ed0ec1fd6bfe8018a654c928ecb9e4177cdbd",
+    "tests/compliance.test.ts": "9fad66ed3983a927f35edeeb2d1d38208bb1eb75b482b543f49e85c32c6744b8",
+    "tests/integration.ts": "d4fdfa82270547e99917db4c4028ca4b5ee10bef735e5c4e08cf5abae1feb7ff",
+    "tests/recovery.test.ts": "817898d3bada55c08c7b8df489f6d18a6bb51e76b0e4d1426f9fa95b4c6b6e8c",
+    "tests/resilience.ts": "2a098783eae5d4b6e0a5d000c6b4501abf4c41756bc3a9082f3111f5fb07c6a3",
+    "docs/engineering/GAP_ANALYSIS.md": "a48512b69af0b7800aea90f3040a9801bdcbb6b4d8c3fbc548fe6b4470a9df37",
+    "docs/engineering/IMPLEMENTATION_PLAN.md": "a8e446661df5844290edb012f5fa48e230f5a15ddaa29866c5f7923d0e792cef",
+    "docs/engineering/AUTHORIZATION_BOUNDARY.md": "9ae39897edef844adedef08b1178a905543f5b5824763e890f31c6d57d41c850"
+  },
+  "logSha256": "3e9ece7c5cc373d8e8c6295f3df2d604349f69d55f61de6c1c2eeb416280179e",
+  "limitation": "Typecheck, lint, formatting, build and unit/property checks only. New real integration groups and fresh browser captures are pending. Historical CI applies to the baseline SHA. This execution record is unsigned."
+}
