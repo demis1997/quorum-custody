@@ -216,6 +216,16 @@ Four real hosted PNG screenshots were downloaded from the verification artifact,
 visually inspected and embedded in the README: wallet-overview.png, approval-queue.png,
 completed-transaction.png and failure-demonstration.png. They show explicit local
 network/prototype labels and no credentials, wrapping keys or keyshares. Historical
-JPEGs remain as baseline evidence. A final backup snapshot consistency guard,
-pre-action/failure audit records and worker-row layout refinement are covered by the
-subsequent final CI run; its status will be recorded after completion.
+JPEGs remain as baseline evidence. The final backup snapshot consistency guard, pre-action/failure audit records and
+worker-row layout refinement passed the entire hosted sequence on commit `dbb5555`,
+including push run [37846801902](https://github.com/demis1997/quorum-custody/actions/runs/37846801902)
+and PR run [37846808162](https://github.com/demis1997/quorum-custody/actions/runs/37846808162).
+The checked-in PNGs are from that final PR run's verification artifact. Both runs
+passed all stages, with 20 unit/property cases, 17 real integration groups and 6
+real resilience groups, actual browser approval/control actions and scoped teardown.
+No mocks substituted for any end-to-end path.
+
+Remaining unexecuted paths: optional Dockerfile.native, full upstream/sanitizer and
+side-channel lanes, multi-host operation, full power-loss/disk-loss matrix, total-host
+recovery and production identity rotation. Historical local Docker rerun remains
+blocked, but the current source's real Linux path is verified above.

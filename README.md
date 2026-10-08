@@ -192,7 +192,18 @@ with their respective components. No endorsement is implied.
 
 ## Failure demonstration and wallet recovery
 
-Create a fresh opt-in development profile with `QUORUM_DEMO_CONTROLS=1 make demo`.
+From a fresh clone, use `QUORUM_DEMO_CONTROLS=1 make demo`. If an existing profile
+is present, create an isolated opt-in profile instead:
+
+```sh
+export QUORUM_DEV=.dev-resilience QUORUM_PORT_OFFSET=4000
+export QUORUM_COMPOSE_PROJECT=quorum-custody-resilience QUORUM_DEMO_CONTROLS=1
+make demo
+npm run resilience
+```
+
+The isolated dashboard is at `http://127.0.0.1:8300`; actor files are under
+`.dev-resilience/actors/`. Keep these environment variables for `make stop`.
 Import admin.json and open **Failure demonstration** to stop/restart real managed
 signers, inspect worker leases and separate retry counts, and observe local receipts.
 Controls require admin authentication, a loopback bind and explicit profile opt-in;
