@@ -4,6 +4,7 @@ import { formatEther, parseEther } from 'ethers';
 import { approvalText, canonical } from '../src/encoding.js';
 import './style.css';
 import { FailureDemo } from './FailureDemo.js';
+import { Compliance } from './Compliance.js';
 type Actor = { id: string; role: string; token: string; privateKey: string };
 type Wallet = {
   id: string;
@@ -38,6 +39,8 @@ type Policy = {
   maxFeePerGas: string;
   requiredApprovers: number;
   separationOfDuties: boolean;
+  frozen?: boolean;
+  deniedRecipients?: string[];
 };
 type Overview = {
   demoControls: boolean;
@@ -157,6 +160,7 @@ function App() {
             'Approval queue',
             'Policy',
             'Audit history',
+            ...(actor?.role === 'admin' ? ['Custody evidence'] : []),
             ...(actor?.role === 'admin' && data?.demoControls ? ['Failure demonstration'] : []),
           ].map((item, i) => (
             <button
@@ -169,7 +173,7 @@ function App() {
                 setSelected(null);
               }}
             >
-              <span className="navicon">{['◈', '↗', '✓', '◇', '≡', '⚙'][i]}</span>
+              <span className="navicon">{['◈', '↗', '✓', '◇', '≡', '▤', '⚙'][i]}</span>
               {item}
               {item === 'Approval queue' && pending.length > 0 && <b>{pending.length}</b>}
             </button>
@@ -260,6 +264,9 @@ function App() {
             <>
               {view === 'Failure demonstration' && actor.role === 'admin' && (
                 <FailureDemo key={actor.id} api={api} />
+              )}
+              {view === 'Custody evidence' && actor.role === 'admin' && (
+                <Compliance key={actor.id} api={api} />
               )}
               {view === 'Overview' && (
                 <>
@@ -640,6 +647,36 @@ function App() {
                           setPolicyDraft({
                             ...(policyDraft ?? data.policy),
                             recipients: e.target.value.split('\n'),
+                          })
+                        }
+                      />
+                    </label>
+                    <label>
+                      <span>Custody freeze</span>
+                      <input
+                        type="checkbox"
+                        checked={(policyDraft ?? data.policy).frozen ?? false}
+                        onChange={(event) =>
+                          setPolicyDraft({
+                            ...(policyDraft ?? data.policy),
+                            frozen: event.target.checked,
+                          })
+                        }
+                      />
+                      Stop new signing authorizations and broadcast decisions. Active MPC and
+                      already-issued submissions cannot be recalled.
+                    </label>
+                    <label>
+                      Recipient denylist · overrides allowlist
+                      <textarea
+                        value={((policyDraft ?? data.policy).deniedRecipients ?? []).join('\n')}
+                        onChange={(event) =>
+                          setPolicyDraft({
+                            ...(policyDraft ?? data.policy),
+                            deniedRecipients: event.target.value
+                              .split('\n')
+                              .map((address) => address.trim())
+                              .filter(Boolean),
                           })
                         }
                       />

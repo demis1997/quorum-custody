@@ -8,6 +8,7 @@ import { approve, createRequest, createWallet, updatePolicy, reapprove } from '.
 import { availability } from './mpc.js';
 import { demoEnabled, demoStatus, changeSigner } from './demo-controls.js';
 import { startWorker } from './worker.js';
+import { custodyControls, evidenceBundle } from './compliance.js';
 const app = express();
 app.disable('x-powered-by');
 app.use(express.json({ limit: '16kb' }));
@@ -113,6 +114,22 @@ app.get('/api/audit', async (_req, res) =>
     ).rows,
   ),
 );
+app.get('/api/compliance', async (_req, res) => {
+  roles(res, 'admin');
+  const envelope = await policy();
+  res.json({
+    controls: custodyControls,
+    scope: 'Local ETH prototype · engineering evidence only',
+    policyVersion: envelope.policy.version,
+    frozen: envelope.policy.frozen ?? false,
+  });
+});
+app.get('/api/compliance/evidence', (_req, res) => {
+  roles(res, 'admin');
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Content-Disposition', 'attachment; filename="quorum-engineering-evidence.json"');
+  res.json(evidenceBundle());
+});
 app.get('/api/demo', async (_req, res) => {
   roles(res, 'admin');
   res.json(await demoStatus());

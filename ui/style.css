@@ -736,3 +736,16 @@ details code {
 .demojobs .tablerow > span:last-child {
   display: block;
 }
+
+.compliance {
+  display: grid;
+  gap: 18px;
+}
+.compliance p {
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+.compliance select {
+  margin-left: 12px;
+  padding: 8px;
+}

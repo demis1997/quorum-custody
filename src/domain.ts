@@ -29,6 +29,8 @@ export const policySchema = z
     maxFeePerGas: wei,
     requiredApprovers: z.number().int().min(2).max(3),
     separationOfDuties: z.literal(true),
+    frozen: z.boolean().optional(),
+    deniedRecipients: z.array(z.string().length(42)).max(20).optional(),
   })
   .strict();
 export type Policy = z.infer<typeof policySchema>;
@@ -120,7 +122,7 @@ function verified(text: string, signature: string, publicKey: string) {
 export function validatePolicy(envelope: PolicyEnvelope, actors: ActorPublic[]) {
   const policy = policySchema.parse(envelope.policy);
   requireThat(
-    policy.recipients.every((a) => getAddress(a) === a),
+    [...policy.recipients, ...(policy.deniedRecipients ?? [])].every((a) => getAddress(a) === a),
     'invalid_policy_address',
   );
   requireThat(BigInt(policy.aggregate) >= BigInt(policy.perTransaction), 'invalid_limits');
@@ -132,6 +134,7 @@ export function validatePolicy(envelope: PolicyEnvelope, actors: ActorPublic[]) 
   return policy;
 }
 export function parseTransfer(unsigned: string, policy: Policy) {
+  requireThat(!policy.frozen, 'custody_frozen');
   requireThat(typeof unsigned === 'string' && unsigned.length <= 1024, 'transaction_bounds');
   let tx: Transaction;
   try {
@@ -145,6 +148,7 @@ export function parseTransfer(unsigned: string, policy: Policy) {
     'wrong_chain_or_type',
   );
   requireThat(tx.to && policy.recipients.includes(getAddress(tx.to)), 'recipient_not_allowed');
+  requireThat(!policy.deniedRecipients?.includes(getAddress(tx.to)), 'recipient_denied');
   requireThat(tx.value > 0n && tx.value <= BigInt(policy.perTransaction), 'transaction_limit');
   requireThat(
     tx.data === '0x' && tx.gasLimit === 21000n && (tx.accessList?.length ?? 0) === 0,

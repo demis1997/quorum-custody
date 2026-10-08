@@ -3,6 +3,7 @@ import { Transaction } from 'ethers';
 import { pool, transaction, audit, policy, authorization, TxRow } from './db.js';
 import { authorize, Rejection, requireThat, transition } from './domain.js';
 import { config } from './config.js';
+import { validateBroadcastDecision } from './broadcast-decision.js';
 import { chain, ensureLocalChain } from './custody.js';
 import { availability, protocol, signedTransaction } from './mpc.js';
 export async function claim(): Promise<TxRow | undefined> {
@@ -90,6 +91,49 @@ export async function fencedUpdate(row: TxRow, to: string, extra: Record<string,
     });
   });
 }
+// Policy updates and this decision use the same lock order. RPC follows commit;
+// an already-issued submission cannot be revoked by a later policy update.
+export async function permitBroadcast(row: TxRow) {
+  return transaction(async (client) => {
+    await client.query('SELECT id FROM policy WHERE id=1 FOR SHARE');
+    const current = (
+      await client.query('SELECT * FROM transactions WHERE id=$1 FOR UPDATE', [row.id])
+    ).rows[0] as TxRow | undefined;
+    requireThat(
+      current &&
+        current.owner === row.owner &&
+        current.lease_until &&
+        current.lease_until.getTime() > Date.now(),
+      'worker_ownership_lost',
+      409,
+    );
+    requireThat(
+      current.state === row.state &&
+        current.signed_raw === row.signed_raw &&
+        current.tx_hash === row.tx_hash &&
+        current.unsigned === row.unsigned,
+      'broadcast_state_changed',
+      409,
+    );
+    const auth = await authorization(current, client);
+    const checkedAt = Date.now();
+    requireThat(current.lease_until.getTime() > checkedAt, 'worker_ownership_lost', 409);
+    validateBroadcastDecision(current, auth, config().actors, auth.policyEnvelope, checkedAt);
+    await client.query(
+      'UPDATE transactions SET broadcast_attempts=broadcast_attempts+1 WHERE id=$1',
+      [row.id],
+    );
+    await audit(client, 'worker', 'broadcast_authorized', row.id, {
+      digest: current.digest,
+      hash: current.tx_hash,
+      policyVersion: current.policy_version,
+      approvalActors: auth.approvals.map((approval) => approval.actor),
+      checkedAt: new Date(checkedAt).toISOString(),
+      expiresAt: auth.expiresAt,
+      attempt: current.broadcast_attempts + 1,
+    });
+  });
+}
 export async function processClaim(row: TxRow) {
   const heartbeat = setInterval(() => {
     void pool
@@ -143,12 +187,9 @@ export async function processClaim(row: TxRow) {
       await fencedUpdate(row, 'blocked', { error: 'broadcast_retry_limit_reconcile_manually' });
       return;
     }
-    // Record attempt before RPC. If RPC response is lost, the next claim reconciles this same hash.
-    const attempt = await pool.query(
-      'UPDATE transactions SET broadcast_attempts=broadcast_attempts+1 WHERE id=$1 AND owner=$2 AND lease_until>now() RETURNING id',
-      [row.id, row.owner],
-    );
-    requireThat(attempt.rowCount === 1, 'worker_ownership_lost', 409);
+    // Full current authorization and the attempt are committed before RPC. A lost
+    // response is reconciled by the next claim using these exact persisted bytes.
+    await permitBroadcast(row);
     try {
       const returned = await chain.send('eth_sendRawTransaction', [row.signed_raw]);
       requireThat(returned === row.tx_hash, 'broadcast_hash_mismatch');
@@ -168,12 +209,15 @@ export async function processClaim(row: TxRow) {
       'worker_operation_failed',
       'session_cancelled',
     ];
+    const broadcastRejection = error instanceof Rejection && error.status === 422;
     const next =
-      row.state === 'signing'
-        ? retryable.includes(code) && row.sign_attempts < 3
-          ? 'ready'
-          : 'blocked'
-        : row.state;
+      broadcastRejection && row.state !== 'signing'
+        ? 'blocked'
+        : row.state === 'signing'
+          ? retryable.includes(code) && row.sign_attempts < 3
+            ? 'ready'
+            : 'blocked'
+          : row.state;
     try {
       await fencedUpdate(row, next, { error: code });
     } catch {

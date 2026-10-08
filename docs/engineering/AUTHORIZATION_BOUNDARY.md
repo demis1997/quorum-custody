@@ -1,0 +1,11 @@
+# Authorization at broadcast
+
+The first roadmap slice adds optional admin-signed `frozen` and `deniedRecipients` policy fields. Omitted fields preserve existing policy signatures. Denied recipients override the allowlist. Request parsing and each signer's authorization reject frozen/denied transfers. Use the Policy UI to sign a new version; existing active-MPC policy-update exclusion remains.
+
+Before each *new* raw transaction submission, the worker locks the policy row for share, then the transaction row for update. It checks ownership/lease, persisted state/bytes, signed sender, attempt budget and complete current authorization (roles, exact transaction, signatures, quorum, expiry, current signed policy). It records `broadcast_authorized` and the attempt in that same short database transaction. A rejection blocks the job and retains the signed bytes, nonce and reserved budget. These portable bytes must not be silently reapproved or replaced.
+
+Receipt and already-known transaction lookup precede this check, so externally observed transactions continue to reconcile after policy changes or approval expiry. No database lock spans RPC. The committed decision is the authorization boundary: a later policy update cannot recall an issued RPC or cryptographically revoke an Ethereum signature. An expiry crossing between the decision and network submission is subject to this same boundary. A compromised coordinator holding signed bytes can bypass its own broadcast checks; signer authorization prevents unauthorized new signatures, not use of already-issued ones. This is not immediate cancellation of an active MPC round.
+
+The policy lock order matches policy update and claim paths. RPC retry sends only the exact persisted transaction after a fresh decision; a lost response is reconciled by hash first. Invalid authorization is terminal; infrastructure failures retain the retry/reconciliation behavior. Unit fixtures use ordinary Ethereum signatures only to test validation of portable bytes; real integration remains cb-mpc with PostgreSQL and Anvil.
+
+Remaining: tenant-aware ownership/bindings, signed revocation propagation, independent final-sign concurrency boundary, timelocks, rolling budgets, immediate freeze during MPC, audit hash chain and external evidence checkpoints. No MiCA/DORA compliance or custody authorisation is asserted.

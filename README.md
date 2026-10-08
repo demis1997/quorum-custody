@@ -219,3 +219,18 @@ project-only teardown. Test reports and real browser screenshots are uploaded as
 verification evidence; credentials, backups and browser traces are excluded.
 
 ![Real signer offline with worker and recovery status](docs/images/failure-demonstration.png)
+
+## Institutional roadmap: first local slice
+
+The new roadmap audit and first authorization/evidence slice are documented in
+[Gap analysis](docs/engineering/GAP_ANALYSIS.md),
+[Implementation plan](docs/engineering/IMPLEMENTATION_PLAN.md), and
+[Broadcast authorization boundary](docs/engineering/AUTHORIZATION_BOUNDARY.md).
+The worker revalidates authorization before each new external broadcast decision;
+signed policy supports optional freeze and recipient denylist controls.
+The admin **Custody evidence** screen shows sourced MiCA requirements, actual
+implementation/test references, gaps and a downloadable source-hash inventory.
+It makes no compliance certification claims. Tenant/client ownership, position
+registers, statements, HSM/KMS, refresh ceremonies and the remaining institutional
+roadmap are not implemented. See [slice verification](docs/engineering/VERIFICATION.md)
+for executed versus pending checks; historical CI does not verify local edits.
