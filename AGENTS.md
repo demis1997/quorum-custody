@@ -27,3 +27,7 @@ corrected rerun status is explicitly recorded. `make screenshots` is sandbox-blo
 on this host; real in-app browser captures are provided. `make stop`, optional
 Linux builder and hosted CI have separate execution status in that record.
 Do not label a command verified until its recorded outcome actually confirms it.
+
+Recovery must retain full policy/ledger/replay history, reject stale or missing checkpoints,
+and require an offline signer. Keep fault controls opt-in, loopback and admin-only.
+`npm run resilience` is the real recovery path; record its execution outcome before claiming success.

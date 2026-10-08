@@ -6,6 +6,7 @@ import { tokenHash, Rejection, requireThat } from './domain.js';
 import { pool, policy, authorization, transaction, audit } from './db.js';
 import { approve, createRequest, createWallet, updatePolicy, reapprove } from './custody.js';
 import { availability } from './mpc.js';
+import { demoEnabled, demoStatus, changeSigner } from './demo-controls.js';
 import { startWorker } from './worker.js';
 const app = express();
 app.disable('x-powered-by');
@@ -50,6 +51,7 @@ app.get('/api/overview', async (_req, res) => {
     transactions: transactions.rows,
     signers,
     policy: envelope.policy,
+    demoControls: demoEnabled(),
     actor: { id: res.locals.actor.id, role: res.locals.actor.role },
   });
 });
@@ -111,6 +113,13 @@ app.get('/api/audit', async (_req, res) =>
     ).rows,
   ),
 );
+app.get('/api/demo', async (_req, res) => {
+  roles(res, 'admin');
+  res.json(await demoStatus());
+});
+app.post('/api/demo/signers', async (req, res) => {
+  res.json(await changeSigner(roles(res, 'admin'), req.body));
+});
 app.use('/api', (_req, res) => res.status(404).json({ error: 'not_found' }));
 app.use(express.static(resolve('dist/ui')));
 app.get('/', (_req, res) => res.sendFile(resolve('dist/ui/index.html')));

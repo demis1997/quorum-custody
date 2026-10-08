@@ -715,3 +715,9 @@ details code {
     text-align: right;
   }
 }
+
+.demosteps {
+  color: var(--muted);
+  line-height: 1.8;
+  padding-left: 24px;
+}

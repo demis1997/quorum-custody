@@ -26,13 +26,41 @@ jobs:
           tar -xzf .build/foundry.tar.gz -C .build/foundry anvil
           echo "$PWD/.build/foundry" >> "$GITHUB_PATH"
           .build/foundry/anvil --version
-      - name: Real demo, boundaries, checks and screenshots
+      - name: Real native build and demo
         env:
           CC: clang-20
           CXX: clang++-20
+          QUORUM_DEMO_CONTROLS: '1'
         run: |
-          trap 'make stop || true' EXIT
-          make demo
-          make check
-          make screenshots
-          make integration
+          set -o pipefail
+          mkdir -p .build/reports
+          make demo 2>&1 | tee .build/reports/demo.txt
+      - name: Types, lint, build and property tests
+        run: |
+          set -o pipefail
+          make check 2>&1 | tee .build/reports/check.txt
+      - name: Real dashboard and browser approval
+        run: |
+          set -o pipefail
+          PLAYWRIGHT_BROWSERS_PATH="$PWD/.build/browsers" npx playwright install --with-deps chromium
+          PLAYWRIGHT_BROWSERS_PATH="$PWD/.build/browsers" node --import tsx scripts/screenshots.ts 2>&1 | tee .build/reports/browser.txt
+      - name: Real integration boundaries
+        run: |
+          set -o pipefail
+          make integration 2>&1 | tee .build/reports/integration.txt
+      - name: Failure demonstration and encrypted recovery
+        run: |
+          set -o pipefail
+          npm run resilience 2>&1 | tee .build/reports/resilience.txt
+      - name: Project-only teardown
+        if: always()
+        run: make stop
+      - name: Verification evidence (no generated credentials or traces)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-evidence
+          path: |
+            .build/reports/*.txt
+            docs/images/*.png
+          if-no-files-found: ignore

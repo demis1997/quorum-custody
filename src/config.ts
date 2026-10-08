@@ -11,6 +11,7 @@ import { resolve } from 'node:path';
 import { ActorPublic, PolicyEnvelope } from './domain.js';
 export const dev = resolve(process.env.QUORUM_DEV ?? '.dev');
 export type Config = {
+  demoControls?: boolean;
   project?: string;
   ports?: { api: number; chain: number; database: number };
   actors: ActorPublic[];

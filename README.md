@@ -148,8 +148,9 @@ and any skipped paths are recorded in [verification](docs/verification.md).
 This is a demonstration of boundaries, not an audited security product. All signer
 processes and credentials currently share a host/OS account. An administrator of
 that host can read enough local material to compromise custody. Wrapping keys are
-next to encrypted shares; there is no KMS/HSM, recovery ceremony, backup, rotation,
-refresh, hardware isolation or production incident workflow. Development
+next to encrypted shares. Offline encrypted backup/restore is available with retained
+checkpoints and identities; there is no KMS/HSM, production recovery ceremony, identity
+rotation, share refresh, hardware isolation or production incident workflow. Development
 certificates expire after seven days.
 
 Aggregate reservations are authoritative in PostgreSQL for honest application
@@ -187,3 +188,20 @@ Start a review with [the walkthrough](docs/walkthrough.md), then the
 [decision records](docs/decisions). Prioritized unresolved work is in the threat
 model. The MIT license applies to our application code; upstream licenses remain
 with their respective components. No endorsement is implied.
+
+## Failure demonstration and wallet recovery
+
+Create a fresh opt-in development profile with `QUORUM_DEMO_CONTROLS=1 make demo`.
+Import admin.json and open **Failure demonstration** to stop/restart real managed
+signers, inspect worker leases and separate retry counts, and observe local receipts.
+Controls require admin authentication, a loopback bind and explicit profile opt-in;
+they never bypass approvals. Existing profiles keep controls disabled.
+
+[Wallet recovery](docs/recovery.md) provides offline, password-encrypted per-signer
+backups, complete state restoration, stale-checkpoint rejection and public orphan
+inventory. Run `npm run resilience` for the real failure/restore exercise. It does
+not reconstruct a private key or restore missing database/chain/TLS identities.
+
+CI separates real native/demo, checks, browser approval, integration, resilience and
+project-only teardown. Test reports and real browser screenshots are uploaded as
+verification evidence; credentials, backups and browser traces are excluded.

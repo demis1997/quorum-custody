@@ -103,6 +103,10 @@ const pending = await request<{ id: string }>(
   'queue-' + randomUUID(),
 );
 await approveAs('alice', pending.id);
+atomicJson(resolve(dev, 'demo.json'), {
+  ...JSON.parse(readFileSync(resolve(dev, 'demo.json'), 'utf8')),
+  pendingId: pending.id,
+});
 writeFileSync(resolve(dev, 'pending-id'), pending.id, { mode: 0o600 });
 console.log('Real pending approval request retained:', pending.id);
 await chain.destroy();
