@@ -1,15 +1,12 @@
 # Quorum Custody
 
-A policy-controlled MPC custody **portfolio prototype** for local Ethereum ETH transfers.
+A policy-controlled MPC custody for local Ethereum ETH transfers.
 Three separate signer processes create a real 2-of-3 secp256k1 wallet with Coinbase
 [cb-mpc](https://github.com/coinbase/cb-mpc). Two distinct people approve the exact
 unsigned transaction; two available signers independently verify that evidence,
 produce a threshold ECDSA signature, and the custody worker verifies and broadcasts
 it to Anvil. A third signer can be offline during signing.
 
-**Unaudited. Local development network only. Synthetic data and development
-credentials. No real funds, production-readiness claim, compliance claim,
-certification, or Coinbase endorsement.** Nothing is deployed or pushed.
 
 ## What is implemented
 
