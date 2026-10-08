@@ -203,7 +203,19 @@ and 20 unit/property cases (15 existing plus 5 recovery boundary cases). The she
 defaulted to Node 18 once; that unsupported-runtime build failure was corrected by
 selecting the documented Node 22 runtime. Added an explicit package engine range.
 
-The development panel and `npm run resilience` are implemented. Real hosted execution
-of the current branch is pending at this recording point; no authored recovery test
-is counted as a successful integration yet. The host Docker socket remains
+Hosted run [37845966122](https://github.com/demis1997/quorum-custody/actions/runs/37845966122)
+on commit `9ce3432` passed the complete real native/demo, 20 checks, browser approval
+and failure controls, all 17 integration groups, all 6 resilience groups, artifact
+upload and project-only teardown. The restored signer completed a new real transfer
+with signer-3 offline, and replayed session IDs stayed rejected. The original signer
+directory was moved into private quarantine to inject loss; the database, chain, TLS
+identity and independent checkpoint survived. This is not a total-host-loss test. The host Docker socket remains
 unresponsive, so this round uses the hosted Linux runner for end-to-end verification.
+
+Four real hosted PNG screenshots were downloaded from the verification artifact,
+visually inspected and embedded in the README: wallet-overview.png, approval-queue.png,
+completed-transaction.png and failure-demonstration.png. They show explicit local
+network/prototype labels and no credentials, wrapping keys or keyshares. Historical
+JPEGs remain as baseline evidence. A final backup snapshot consistency guard,
+pre-action/failure audit records and worker-row layout refinement are covered by the
+subsequent final CI run; its status will be recorded after completion.

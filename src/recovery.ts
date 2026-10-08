@@ -134,6 +134,7 @@ export function backupSigner(
   requireThat(password.length >= 24, 'recovery_password_too_short');
   const state = verifyRecoveryState(storage, anchor);
   const files = snapshot(storage);
+  requireThat(digest(files) === state.digest, 'recovery_state_changed');
   const metadata = { format: 'quorum-signer-backup/v1', ...identity, ...state };
   const salt = randomBytes(16),
     iv = randomBytes(12),

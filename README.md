@@ -133,16 +133,17 @@ exactly-once external delivery**. See [architecture](docs/architecture.md).
 Captured from the running backend through browser automation, using synthetic
 actors and transactions. There are no UI fixtures or generated screenshots.
 
-![Real wallet and signer availability](docs/images/wallet-overview.jpg)
+![Real wallet and signer availability](docs/images/wallet-overview.png)
 
-![Real partially approved transaction and full review details](docs/images/approval-queue.jpg)
+![Real partially approved transaction and full review details](docs/images/approval-queue.png)
 
-![Real confirmed local transfer and audit timeline](docs/images/completed-transaction.jpg)
+![Real confirmed local transfer and audit timeline](docs/images/completed-transaction.png)
 
 ## Verification and limits
 
-The real integration suite has passed 17 boundary groups, and 15 unit/property
-checks passed. A fresh source-copy `make demo` is separately verified; exact results
+The real integration suite has passed 17 boundary groups, and 20 unit/property
+checks passed. Six real resilience groups exercise fault controls and complete-state
+recovery. A fresh source-copy `make demo` is separately verified; exact results
 and any skipped paths are recorded in [verification](docs/verification.md).
 
 This is a demonstration of boundaries, not an audited security product. All signer
@@ -205,3 +206,5 @@ not reconstruct a private key or restore missing database/chain/TLS identities.
 CI separates real native/demo, checks, browser approval, integration, resilience and
 project-only teardown. Test reports and real browser screenshots are uploaded as
 verification evidence; credentials, backups and browser traces are excluded.
+
+![Real signer offline with worker and recovery status](docs/images/failure-demonstration.png)

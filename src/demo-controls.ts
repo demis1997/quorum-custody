@@ -23,6 +23,9 @@ export async function changeSigner(actor: string, input: unknown) {
   requireThat(!changing, 'demo_control_busy', 409);
   changing = true;
   try {
+    await transaction((c) =>
+      audit(c, actor, 'development_signer_control_requested', null, command),
+    );
     const entry = processes().find((p) => p.command === command.signer);
     requireThat(entry, 'unmanaged_process');
     let alive = false;
@@ -64,6 +67,14 @@ export async function changeSigner(actor: string, input: unknown) {
     }
     await transaction((c) => audit(c, actor, 'development_signer_control', null, command));
     return { signer: command.signer, action: command.action };
+  } catch (error) {
+    await transaction((c) =>
+      audit(c, actor, 'development_signer_control_failed', null, {
+        ...command,
+        reason: 'control_failed',
+      }),
+    ).catch(() => undefined);
+    throw error;
   } finally {
     changing = false;
   }

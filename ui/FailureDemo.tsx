@@ -106,7 +106,7 @@ export function FailureDemo({ api }: { api: Api }) {
           ))
         )}
       </section>
-      <section className="card activity">
+      <section className="card activity demojobs">
         <div className="cardhead">
           <h2>Worker ownership & recovery</h2>
           <span className="subtle">LIVE DATABASE</span>
@@ -129,12 +129,12 @@ export function FailureDemo({ api }: { api: Api }) {
               <span>
                 <strong>{job.id.slice(0, 8)}</strong>
                 <small>
-                  {job.state}
+                  {job.state.replaceAll('_', ' ')}
                   {job.error ? ' · ' + job.error.replaceAll('_', ' ') : ''}
                 </small>
                 {job.tx_hash && <small title={job.tx_hash}>{job.tx_hash.slice(0, 12)}…</small>}
               </span>
-              <span title={job.owner ?? ''}>{job.owner?.slice(0, 8) ?? 'Unclaimed'}</span>
+              <span title={job.owner ?? ''}>{job.owner?.slice(0, 8) ?? 'No active lease'}</span>
               <span>
                 {job.lease_until
                   ? new Date(job.lease_until).toISOString().slice(11, 19) + ' UTC'
@@ -161,7 +161,9 @@ export function FailureDemo({ api }: { api: Api }) {
             <strong>{s.id}</strong>
             <span>
               {s.status.replaceAll('_', ' ')}
-              {s.generation ? ` · generation ${s.generation} · ${s.wallets} wallets` : ''}
+              {s.generation
+                ? ` · generation ${s.generation} · ${s.wallets} wallet${s.wallets === 1 ? '' : 's'}`
+                : ''}
             </span>
           </div>
         ))}
